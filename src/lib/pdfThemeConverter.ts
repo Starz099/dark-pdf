@@ -8,7 +8,10 @@ import workerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 // Configure pdf.js worker
 GlobalWorkerOptions.workerSrc = workerSrc;
 
-export async function convertPdfTheme(pdfFile: File): Promise<Blob> {
+export async function convertPdfTheme(
+  pdfFile: File,
+  onProgress?: (currentPage: number, totalPages: number) => void,
+): Promise<Blob> {
   const arrayBuffer = await pdfFile.arrayBuffer();
 
   const pdfDoc = await getDocument({ data: arrayBuffer }).promise;
@@ -57,6 +60,9 @@ export async function convertPdfTheme(pdfFile: File): Promise<Blob> {
       width: canvas.width,
       height: canvas.height,
     });
+
+    // Report progress after page is fully processed
+    onProgress?.(pageNum, pdfDoc.numPages);
   }
 
   const pdfBytes = await newPdfDoc.save();

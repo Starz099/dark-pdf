@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
+import { Progress } from "./ui/progress";
 import { convertPdfTheme, downloadPdf } from "../lib/pdfThemeConverter";
 
 export const PdfThemeConverter = () => {
@@ -10,6 +11,7 @@ export const PdfThemeConverter = () => {
     blob: Blob;
     filename: string;
   } | null>(null);
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -18,8 +20,11 @@ export const PdfThemeConverter = () => {
 
     setFileName(file.name);
     setIsConverting(true);
+    setProgress({ current: 0, total: 0 });
     try {
-      const blob = await convertPdfTheme(file);
+      const blob = await convertPdfTheme(file, (current, total) => {
+        setProgress({ current, total });
+      });
       const newFilename = file.name.replace(".pdf", "-dark.pdf");
       setConvertedPdf({ blob, filename: newFilename });
     } catch (error) {
@@ -79,8 +84,27 @@ export const PdfThemeConverter = () => {
       </div>
 
       {isConverting && (
-        <div className="border-primary/20 bg-primary/5 text-primary rounded-xl border px-4 py-3 text-sm">
-          Converting to a dark-friendly theme...
+        <div className="border-primary/20 bg-primary/5 space-y-2 rounded-xl border px-4 py-3">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-primary font-medium">
+              Converting to a dark-friendly theme...
+            </span>
+            <span className="text-primary/80 text-xs">
+              {progress.total > 0
+                ? `${Math.round((progress.current / progress.total) * 100)}%`
+                : "0%"}
+            </span>
+          </div>
+          <Progress
+            value={
+              progress.total > 0 ? (progress.current / progress.total) * 100 : 0
+            }
+          />
+          <p className="text-muted-foreground text-xs">
+            {progress.total > 0
+              ? `Page ${progress.current} of ${progress.total}`
+              : "Initializing..."}
+          </p>
         </div>
       )}
 
